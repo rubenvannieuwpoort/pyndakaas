@@ -48,6 +48,10 @@ class Handler(ABC):
 
     def handle(self, metadata) -> None:  # TODO: types
         template_name = self.template()
+
+        if self.front_matter is not None and 'template' in self.front_matter:
+            template_name = self.front_matter['template']
+
         assert template_name is None or self.template_env is not None
 
         template = None
