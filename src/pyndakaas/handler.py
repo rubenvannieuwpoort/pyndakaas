@@ -13,25 +13,22 @@ class Handler(ABC):
 
     input_root: Path
     output_root: Path
-    path: Path
+    rel_input_path: Path
 
     template_env: jinja2.Environment | None
 
     source: str
     front_matter: dict[str, Any] | None
 
-    def __init__(self, input_root: Path, output_root: Path, rel_path: Path,
+    def __init__(self, input_root: Path, output_root: Path, rel_input_path: Path,
                  template_env: jinja2.Environment | None) -> None:
-        path = input_root / rel_path
-        assert path.exists()
-
         self.input_root = input_root
         self.output_root = output_root
-        self.path = path
-
+        self.rel_input_path = rel_input_path
         self.template_env = template_env
 
-        with open(path) as f:
+        input_path = self.input_root / self.rel_input_path
+        with open(input_path) as f:
             input = f.read()
 
         if self.front_matter_parser is not None:
@@ -40,6 +37,8 @@ class Handler(ABC):
         else:
             self.front_matter = None
             self.source = self.source
+
+        self.rel_output_path = self.output_path()
 
     @staticmethod
     @abstractmethod
@@ -63,12 +62,12 @@ class Handler(ABC):
 
         if template is not None:
             root = Globber(metadata)
-            folder = Globber(metadata, self.path.relative_to(self.input_root))
+            folder = Globber(metadata, self.rel_input_path)
             output = template.render(front_matter=self.front_matter, body=body, folder=folder, root=root)
         else:
             output = body
 
-        output_path = self.output_path()
+        output_path = self.output_root / self.rel_output_path
         assert not output_path.exists()
 
         output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -76,7 +75,7 @@ class Handler(ABC):
             f.write(output)
 
     def output_path(self) -> Path:
-        return self.output_root / self.path.relative_to(self.input_root).with_suffix(self.suffix() or '')
+        return self.rel_input_path.with_suffix(self.suffix() or '')
 
     def suffix(self) -> str:
         return '.html'
@@ -89,11 +88,13 @@ class Handler(ABC):
 
 
 class Metadata:
-    path: Path
+    input_path: Path
+    output_path: Path
     front_matter: dict[str, Any]
 
-    def __init__(self, path: Path, front_matter) -> None:
-        self.path = path
+    def __init__(self, input_path: Path, output_path: Path, front_matter) -> None:
+        self.input_path = input_path
+        self.output_path = output_path
         self.front_matter = front_matter
 
 
@@ -103,7 +104,7 @@ class Globber:
         self.prefix = root or ''
 
     def glob(self, pat):
-        return [md for md in self.metadata if fnmatch(str(self.prefix / md.path), pat)]
+        return [md for md in self.metadata if fnmatch(str(self.prefix / md.input_path), pat)]
 
 
 handlers: list[Any] = []
