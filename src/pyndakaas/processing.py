@@ -29,7 +29,7 @@ def process_dir_helper(input_root: Path, output_root: Path, rel_path: Path, temp
             output_path.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy(input_path, output_path)
 
-    front_matter = { p: h.front_matter for p, h in handlers }
+    front_matter = {p: h.front_matter for p, h in handlers}
 
     for path, handler in handlers:
         handler.handle(front_matter)

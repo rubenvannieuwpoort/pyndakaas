@@ -20,7 +20,8 @@ class Handler(ABC):
     source: str
     front_matter: dict[str, Any] | None
 
-    def __init__(self, input_root: Path, output_root: Path, rel_path: Path, template_env: jinja2.Environment | None) -> None:
+    def __init__(self, input_root: Path, output_root: Path, rel_path: Path,
+                 template_env: jinja2.Environment | None) -> None:
         path = input_root / rel_path
         assert path.exists()
 
@@ -34,7 +35,8 @@ class Handler(ABC):
             input = f.read()
 
         if self.front_matter_parser is not None:
-            self.front_matter, self.source = self.front_matter_parser.__func__(input)
+            # see https://github.com/python/mypy/issues/14123
+            self.front_matter, self.source = self.front_matter_parser.__func__(input)  # type: ignore[attr-defined]
         else:
             self.front_matter = None
             self.source = self.source
@@ -55,9 +57,12 @@ class Handler(ABC):
 
         body = self.body()
 
-        folder_glob = lambda pat: [fm for p, fm in front_matter if fnmatch(str(p), str(self.input_root / pat))]
-        root_glob = lambda pat: [fm for p, fm in front_matter if fnmatch(str(p), pat)]
-        output = template.render(self.front_matter, body=body, folder={'glob': folder_glob}, root={'glob': root_glob}) if template is not None else body
+        if template is not None:
+            root = get_glob_object(front_matter)
+            folder = get_glob_object(front_matter)
+            output = template.render(front_matter=self.front_matter, body=body, folder=folder, root=root)
+        else:
+            output = body
 
         output_path = self.output_path()
         assert not output_path.exists()
@@ -79,7 +84,13 @@ class Handler(ABC):
         return self.source
 
 
+def get_glob_object(front_matter, root=None):
+    prefix = root or ''
+    return {'glob': lambda pat: [fm for p, fm in front_matter if fnmatch(str(prefix / p), pat)]}
+
+
 handlers: list[Any] = []
+
 
 def handler():
     def decorator(handler):
