@@ -28,24 +28,21 @@ pip install -e .
 
 ```python
 from pathlib import Path
-from pyndakaas import process_dir, Handler, register, renderer
+from pyndakaas import process_dir, Handler, handler
 
 # Define a custom handler
-@register()
+@handler()
 class MarkdownHandler(Handler):
-    suffix = '.html'
-    template = 'post'
-    renderer = 'markdown'
-    
     @staticmethod
-    def detect(source_path: Path) -> bool:
-        return source_path.suffix == '.md'
-
-# Define a custom renderer
-@renderer("markdown")
-def render_markdown(source: str) -> str:
-    # Your markdown rendering logic here
-    return f"<p>{source}</p>"
+    def should_handle(input_path: Path) -> bool:
+        return input_path.suffix == '.md'
+    
+    def template(self) -> str | None:
+        return 'post'
+    
+    def body(self) -> str:
+        # Your markdown rendering logic here
+        return f"<p>{self.source}</p>"
 
 # Process directory
 process_dir(Path('src'), Path('output'))
@@ -58,8 +55,8 @@ Source files use JSON frontmatter followed by content:
 ```
 {
     "title": "My Post",
-    "template": "post",
-    "renderer": "markdown"
+    "author": "John Doe",
+    "template": "custom-layout"
 }
 
 # My Content
@@ -67,24 +64,25 @@ Source files use JSON frontmatter followed by content:
 This is the actual content that will be processed.
 ```
 
+The `template` field in frontmatter will override the handler's default template specified in the `template` method of the handler.
+
 ## Handlers
 
 Handlers define how different file types are processed:
 
-- `suffix`: Output file extension
-- `template`: Default template to use
-- `renderer`: Default renderer for content
-- `detect()`: Method to identify files this handler should process
+- `should_handle()`: Static method to identify files this handler should process
+- `suffix()`: Method returning output file extension (defaults to '.html')
+- `body()`: Method returning processed content
+- `template()`: Method returning template name to use (or None to don't use a template and instead output the processed content)
 
 ## Templates
 
 Templates are Jinja2 files in the `templates/` directory. They receive:
 
-- All metadata from the source file
-- `body`: Rendered content
-- `path`: Source file path
-- `source`: Raw source content
-- `glob()`: Function to filter files by pattern
+- `front_matter`: Parsed JSON frontmatter from the source file  
+- `body`: Processed content from the handler's `body()` method
+- `folder`: Globber instance for filtering files relative to current file
+- `root`: Globber instance for filtering files relative to the root of the input directory
 
 ## License
 
