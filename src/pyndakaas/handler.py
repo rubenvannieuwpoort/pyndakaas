@@ -46,7 +46,7 @@ class Handler(ABC):
     def should_handle(input_path: Path) -> bool:
         pass
 
-    def handle(self, front_matter) -> None:  # TODO: types
+    def handle(self, metadata) -> None:  # TODO: types
         template_name = self.template()
         assert template_name is None or self.template_env is not None
 
@@ -58,8 +58,8 @@ class Handler(ABC):
         body = self.body()
 
         if template is not None:
-            root = get_glob_object(front_matter)
-            folder = get_glob_object(front_matter)
+            root = Globber(metadata)
+            folder = Globber(metadata, self.path.relative_to(self.input_root))
             output = template.render(front_matter=self.front_matter, body=body, folder=folder, root=root)
         else:
             output = body
@@ -84,9 +84,22 @@ class Handler(ABC):
         return self.source
 
 
-def get_glob_object(front_matter, root=None):
-    prefix = root or ''
-    return {'glob': lambda pat: [fm for p, fm in front_matter if fnmatch(str(prefix / p), pat)]}
+class Metadata:
+    path: Path
+    front_matter: dict[str, Any]
+
+    def __init__(self, path: Path, front_matter) -> None:
+        self.path = path
+        self.front_matter = front_matter
+
+
+class Globber:
+    def __init__(self, metadata, root=None):
+        self.metadata = metadata
+        self.prefix = root or ''
+
+    def glob(self, pat):
+        return [md for md in self.metadata if fnmatch(str(self.prefix / md.path), pat)]
 
 
 handlers: list[Any] = []
