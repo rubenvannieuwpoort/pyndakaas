@@ -26,26 +26,81 @@ pip install -e .
 
 ## Quick Start
 
-```python
+`pyndakaas` is meant to be used by calling `process_dir` with an input directory, output directory, and optionally a templates directory (if not provided, 'templates' is used). It uses Jinja templates. It is easiest to show how it works by example.
+
+`build.py`:
+```
+import markdown
+from pyndakaas import Handler, handler, process_dir
+
 from pathlib import Path
-from pyndakaas import process_dir, Handler, handler
 
-# Define a custom handler
+
 @handler()
-class MarkdownHandler(Handler):
+class Markdown(Handler):
     @staticmethod
-    def should_handle(input_path: Path) -> bool:
-        return input_path.suffix == '.md'
-    
-    def template(self) -> str | None:
-        return 'post'
-    
-    def body(self) -> str:
-        # Your markdown rendering logic here
-        return f"<p>{self.source}</p>"
+    def should_handle(source_path: Path) -> bool:
+        return source_path.suffix == '.md'
 
-# Process directory
-process_dir(Path('src'), Path('output'))
+    def template(self) -> str:
+        return 'post'
+
+    def body(self) -> str:
+        return markdown.markdown(self.source)
+
+
+# Using default 'templates' directory
+process_dir(Path('src'), Path('build'))
+```
+
+`src/posts/example.md`:
+```
+{
+	"title": "This is the title of my first post"
+}
+
+# Hello, blog
+
+I wanted to write a blog and `pyndakaas` makes it super easy!
+```
+
+`src/index.html`:
+```
+{
+	"title": "Welcome to my blog!",
+	"template": "index"
+}
+```
+
+`templates/post.jinja`:
+```
+<html lang="en">
+<head>
+	<title>{{front_matter.title}}</title>
+</head>
+<body>
+{{body}}
+</body>
+</html>
+```
+
+`templates/index.jinja`:
+```
+<html lang="en">
+<head>
+	<title>My blog</title>
+</head>
+<body>
+	<p>
+		My posts:
+		{% for post in root.glob('posts/*.md') %}
+		<ul>
+			<li><a href="{{post.output_path}}">{{ post.front_matter.title }}</a></li>
+		</ul>
+		{% endfor %}
+	</p>
+</body>
+</html>
 ```
 
 ## File Format
