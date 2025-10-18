@@ -12,8 +12,9 @@ class Handler(ABC):
     front_matter_parser: Callable[[str], tuple[dict[str, Any], str]] | None = json_parser
 
     input_root: Path
-    output_root: Path
     rel_input_path: Path
+    output_root: Path
+    rel_output_path: Path
 
     template_env: jinja2.Environment | None
 
@@ -23,10 +24,15 @@ class Handler(ABC):
     def __init__(self, input_root: Path, output_root: Path, rel_input_path: Path,
                  template_env: jinja2.Environment | None) -> None:
         self.input_root = input_root
-        self.output_root = output_root
         self.rel_input_path = rel_input_path
-        self.template_env = template_env
+        self.output_root = output_root
+        self.rel_output_path = self.output_path()
 
+        self.template_env = template_env
+        self.preprocess()
+
+    # set front_matter and source
+    def preprocess(self):
         input_path = self.input_root / self.rel_input_path
 
         input = None
@@ -40,8 +46,6 @@ class Handler(ABC):
         else:
             self.front_matter = None
             self.source = input
-
-        self.rel_output_path = self.output_path()
 
     @staticmethod
     @abstractmethod
