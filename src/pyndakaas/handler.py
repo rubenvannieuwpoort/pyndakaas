@@ -17,7 +17,7 @@ class Handler(ABC):
 
     template_env: jinja2.Environment | None
 
-    source: str
+    source: str | None
     front_matter: dict[str, Any] | None
 
     def __init__(self, input_root: Path, output_root: Path, rel_input_path: Path,
@@ -28,15 +28,18 @@ class Handler(ABC):
         self.template_env = template_env
 
         input_path = self.input_root / self.rel_input_path
-        with open(input_path) as f:
-            input = f.read()
 
-        if self.front_matter_parser is not None:
+        input = None
+        if input_path.exists() and input_path.is_file():
+            with open(input_path) as f:
+                input = f.read()
+
+        if input is not None and self.front_matter_parser is not None:
             # see https://github.com/python/mypy/issues/14123
             self.front_matter, self.source = self.front_matter_parser.__func__(input)  # type: ignore[attr-defined]
         else:
             self.front_matter = None
-            self.source = self.source
+            self.source = input
 
         self.rel_output_path = self.output_path()
 
