@@ -32,7 +32,7 @@ class Handler(ABC):
         self.preprocess()
 
     # set front_matter and source
-    def preprocess(self):
+    def preprocess(self) -> None:
         input_path = self.input_root / self.rel_input_path
 
         input = None
@@ -67,6 +67,7 @@ class Handler(ABC):
 
         body = self.body()
 
+        output: str | None
         if template is not None:
             root = Globber(metadata)
             folder = Globber(metadata, self.rel_input_path)
@@ -77,9 +78,10 @@ class Handler(ABC):
         output_path = self.output_root / self.rel_output_path
         assert not output_path.exists()
 
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(output_path, 'w') as f:
-            f.write(output)
+        if output is not None:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, 'w') as f:
+                f.write(output)
 
     def output_path(self) -> Path:
         return self.rel_input_path.with_suffix(self.suffix() or '')
@@ -90,7 +92,7 @@ class Handler(ABC):
     def template(self) -> str | None:
         return None
 
-    def body(self) -> str:
+    def body(self) -> str | None:
         return self.source
 
 
