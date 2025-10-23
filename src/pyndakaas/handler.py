@@ -72,10 +72,17 @@ class Handler(ABC):
         self.body: str | None = self.source
 
     def initialize_parameters(self):
+        self.initialize_base_parameters()
+        self.initialize_extra_parameters()
+
+    def initialize_base_parameters(self):
         self.parameters['front_matter'] = self.front_matter
         self.parameters['body'] = self.body
         self.parameters['root'] = self.root
         self.parameters['folder'] = self.folder
+
+    def initialize_extra_parameters(self):
+        pass
 
     def set_output_path(self):
         self.rel_output_path = self.get_rel_output_path()
