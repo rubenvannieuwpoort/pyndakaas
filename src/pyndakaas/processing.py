@@ -21,7 +21,7 @@ def process_dir_helper(input_root: Path, output_root: Path, rel_path: Path, temp
                        handlers: dict[Path, Handler]) -> None:
     for input_path in (input_root / rel_path).iterdir():
         relative_input_path = input_path.relative_to(input_root)
-        handler_class = get_handler_class(relative_input_path)
+        handler_class = get_handler_class(input_root / relative_input_path)
 
         if handler_class is not None:
             handler = handler_class(input_root, relative_input_path, output_root, template_env,
