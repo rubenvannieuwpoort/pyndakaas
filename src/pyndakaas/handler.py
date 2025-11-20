@@ -1,6 +1,5 @@
 from .front_matter_parsers import json_parser
 
-from abc import ABC, abstractmethod
 from fnmatch import fnmatch
 from typing import Any, Callable
 from pathlib import Path
@@ -8,7 +7,7 @@ from pathlib import Path
 import jinja2
 
 
-class Handler(ABC):
+class Handler:
     accept_missing_front_matter = True
     front_matter_parser: Callable[[str], tuple[dict[str, Any], str]] | None = json_parser
     template: str | None = None
@@ -38,9 +37,8 @@ class Handler(ABC):
         self.template_env = template_env
 
     @staticmethod
-    @abstractmethod
     def should_handle(input_path: Path) -> bool:
-        pass
+        return False
 
     def handle(self):
         self.read_source()
@@ -115,7 +113,7 @@ class Handler(ABC):
 
 
 class Globber:
-    def __init__(self, handlers: dict[Path, Handler], root=None):
+    def __init__(self, handlers: dict[Path, Handler] = {}, root=None):
         self.handlers = handlers
         self.prefix = root or ''
 

@@ -17,6 +17,16 @@ def process_dir(input_dir: Path, output_dir: Path, templates_path: Path = Path('
         handler.handle()
 
 
+def process_file(input_file: Path, output_dir: Path, handler_class: Type[Handler],
+                 templates_path: Path = Path('templates')):
+    g = Globber()  # empty globber
+    input_root = input_file.parent
+    relative_input_path = input_file.relative_to(input_root)
+    template_env = jinja2.Environment(loader=jinja2.FileSystemLoader(templates_path))
+    handler = handler_class(input_root, relative_input_path, output_dir, template_env, g, g)
+    handler.handle()
+
+
 def process_dir_helper(input_root: Path, output_root: Path, rel_path: Path, template_env: jinja2.Environment,
                        handlers: dict[Path, Handler]) -> None:
     for input_path in (input_root / rel_path).iterdir():

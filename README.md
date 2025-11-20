@@ -74,9 +74,11 @@ I wanted to write a blog and `pyndakaas` makes it super easy!
 
 `templates/post.jinja`:
 ```
+<!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>{{front_matter.title}}</title>
+<meta charset="utf-8">
+<title>{{front_matter.title}}</title>
 </head>
 <body>
 {{body}}
@@ -86,22 +88,32 @@ I wanted to write a blog and `pyndakaas` makes it super easy!
 
 `templates/index.jinja`:
 ```
+<!DOCTYPE html>
 <html lang="en">
 <head>
-	<title>My blog</title>
+<meta charset="utf-8">
+<title>My blog</title>
 </head>
 <body>
-	<p>
-		My posts:
-		{% for post in root.glob('posts/*.md') %}
-		<ul>
-			<li><a href="{{post.output_path}}">{{ post.front_matter.title }}</a></li>
-		</ul>
-		{% endfor %}
-	</p>
+<p>
+My posts:
+{% for post in root.glob('posts/*.md') %}
+<ul>
+<li><a href="{{post.output_path}}">{{ post.front_matter.title }}</a></li>
+</ul>
+{% endfor %}
+</p>
 </body>
 </html>
 ```
+
+Since version 0.3 it is also possible to process a single file:
+```
+process_file(Path('input/example.md'), Path('output'), Markdown)
+```
+
+Note that you specify the input *file*, but the output *directory* -- the base name of the input file will be used for the output file.
+
 
 ## File Format
 
