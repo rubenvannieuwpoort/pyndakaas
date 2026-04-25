@@ -30,6 +30,13 @@ def process_file(input_file: Path, output_dir: Path, handler_class: Type[Handler
 def process_dir_helper(input_root: Path, output_root: Path, rel_path: Path, template_env: jinja2.Environment,
                        handlers: dict[Path, Handler]) -> None:
     for input_path in (input_root / rel_path).iterdir():
+        if input_path.is_dir():
+            process_dir_helper(input_root, output_root, input_path.relative_to(input_root), template_env, handlers)
+
+    for input_path in (input_root / rel_path).iterdir():
+        if input_path.is_dir():
+            continue
+
         relative_input_path = input_path.relative_to(input_root)
         handler_class = get_handler_class(input_root / relative_input_path)
 
@@ -38,9 +45,6 @@ def process_dir_helper(input_root: Path, output_root: Path, rel_path: Path, temp
                                     Globber(handlers), Globber(handlers, relative_input_path))
             handlers[relative_input_path] = handler
             continue
-
-        if input_path.is_dir():
-            process_dir_helper(input_root, output_root, relative_input_path, template_env, handlers)
         else:
             output_path = output_root / relative_input_path
             output_path.parent.mkdir(parents=True, exist_ok=True)
